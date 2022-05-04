@@ -17,7 +17,11 @@ if [[ ! -z $PACKAGES_MISSING ]] ; then
   sudo apt -y install $PACKAGES_MISSING
 fi
 
-branch=main
+# This is the default branch to clone from
+#branch=main
+# This branch is at a known-working commit
+branch=stable
+
 git clone -b $branch https://github.com/mcguirepr89/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
