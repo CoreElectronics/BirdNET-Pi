@@ -21,8 +21,7 @@ fi
 #branch=main
 # This branch is at a known-working commit
 branch=stable
-
-git clone -b $branch https://github.com/mcguirepr89/BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
+git clone -b $branch https://github.com/CoreElectronics/CE-BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
 if [ ${PIPESTATUS[0]} -eq 0 ];then
