@@ -18,7 +18,7 @@ install_depends() {
   apt install -qqy caddy ftpd sqlite3 php-sqlite3 alsa-utils \
     pulseaudio avahi-utils sox libsox-fmt-mp3 php php-fpm php-curl php-xml \
     php-zip icecast2 swig ffmpeg wget unzip curl cmake make bc libjpeg-dev \
-    zlib1g-dev python3-dev python3-pip python3-venv
+    zlib1g-dev python3-dev python3-pip python3-venv lsof
 }
 
 
@@ -212,6 +212,9 @@ http://localhost http://$(hostname).local ${BIRDNETPI_URL} {
   handle /Charts/* {
     file_server browse
   }
+  basicauth /views.php?view=File* {
+    birdnet ${HASHWORD}
+  }
   basicauth /Processed* {
     birdnet ${HASHWORD}
   }
@@ -357,9 +360,8 @@ Description=BirdNET-Pi Web Terminal
 Restart=on-failure
 RestartSec=3
 Type=simple
-User=${USER}
 Environment=TERM=xterm-256color
-ExecStart=/usr/local/bin/gotty --address localhost -w -p 8888 -P terminal --title-format "BirdNET-Pi Terminal" bash
+ExecStart=/usr/local/bin/gotty --address localhost -w -p 8888 -P terminal --title-format "BirdNET-Pi Terminal" login
 [Install]
 WantedBy=multi-user.target
 EOF

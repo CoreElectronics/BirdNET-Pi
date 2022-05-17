@@ -61,18 +61,19 @@ ICE_PWD=birdnetpi
 
 BIRDNETPI_URL=
 
+#----------------------------  RTSP Stream URL  -------------------------------#
 
-#-------------------  Mobile Notifications via Pushed.co  ---------------------#
-#____________The two variables below enable mobile notifications_______________#
-#_____________See https://pushed.co/quick-start-guide to get___________________#
-#_________________________these values for your app.___________________________#
+## If RTSP_STREAM is set, the system will use the RTSP stream as its audio
+## source instead of recording its own audio. If this variable is kept empty,
+## BirdNET-Pi will default to recording its own audio.
 
-#            Keep these EMPTY if haven't setup a Pushed.co App yet.            #
+RTSP_STREAM=
 
-## Pushed.co App Key and App Secret
+#-----------------------  Apprise Miscellanous Configuration -------------------#
 
-PUSHED_APP_KEY=
-PUSHED_APP_SECRET=
+APPRISE_NOTIFICATION_TITLE="New BirdNET-Pi Detection"
+APPRISE_NOTIFICATION_BODY="A \$sciname \$comname was just detected with a confidence of \$confidence"
+APPRISE_NOTIFY_EACH_DETECTION=false
 
 ################################################################################
 #--------------------------------  Defaults  ----------------------------------#
@@ -126,11 +127,14 @@ CHANNELS=2
 
 FULL_DISK=purge
 
-## PRIVACY_MODE can be set to 'on' or 'off' to configure analysis to be more
-## sensitive to human detections. PRIVACY_MODE 'on' will purge any data that
-## receives even a low HUMAN_HUMAN confidence score.
+## PRIVACY_THRESHOLD can be set to enable sensitivity to Human sounds. This
+## setting is an effort to introduce privacy into the data collection.
+## The PRIVACY_THRESHOLD value represents a percentage of the entire species
+## list used during analysis. If a human sound is predicted anywhere within
+## the precentile set below, no data is collected for that audio chunk.
+## Valid range: 0-3
 
-PRIVACY_MODE=off
+PRIVACY_THRESHOLD=0
 
 ## RECORDING_LENGTH sets the length of the recording that BirdNET-Lite will
 ## analyze.

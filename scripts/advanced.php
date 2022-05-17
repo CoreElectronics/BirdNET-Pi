@@ -33,8 +33,8 @@ if(isset($_GET['submit'])) {
   if(isset($_GET["caddy_pwd"])) {
     $caddy_pwd = $_GET["caddy_pwd"];
     if(strcmp($caddy_pwd,$config['CADDY_PWD']) !== 0) {
-      $contents = preg_replace("/CADDY_PWD=.*/", "CADDY_PWD=$caddy_pwd", $contents);
-      $contents2 = preg_replace("/CADDY_PWD=.*/", "CADDY_PWD=$caddy_pwd", $contents2);
+      $contents = preg_replace("/CADDY_PWD=.*/", "CADDY_PWD=\"$caddy_pwd\"", $contents);
+      $contents2 = preg_replace("/CADDY_PWD=.*/", "CADDY_PWD=\"$caddy_pwd\"", $contents2);
       $fh = fopen('/etc/birdnet/birdnet.conf', "w");
       $fh2 = fopen("./scripts/thisrun.txt", "w");
       fwrite($fh, $contents);
@@ -64,6 +64,19 @@ if(isset($_GET['submit'])) {
     }
   }
 
+  if(isset($_GET["rtsp_stream"])) {
+    $rtsp_stream = str_replace("\r\n", ",", $_GET["rtsp_stream"]);
+    if(strcmp($rtsp_stream,$config['RTSP_STREAM']) !== 0) {
+      $contents = preg_replace("/RTSP_STREAM=.*/", "RTSP_STREAM=$rtsp_stream", $contents);
+      $contents2 = preg_replace("/RTSP_STREAM=.*/", "RTSP_STREAM=$rtsp_stream", $contents2);
+      $fh = fopen('/etc/birdnet/birdnet.conf', "w");
+      $fh2 = fopen("./scripts/thisrun.txt", "w");
+      fwrite($fh, $contents);
+      fwrite($fh2, $contents2);
+      exec('sudo systemctl restart birdnet_recording.service');
+    }
+  }
+  
   if(isset($_GET["overlap"])) {
     $overlap = $_GET["overlap"];
     if(strcmp($overlap,$config['OVERLAP']) !== 0) {
@@ -96,35 +109,20 @@ if(isset($_GET['submit'])) {
     }
   }
 
-  if(isset($_GET["privacy_mode"])) {
-    $privacy_mode = $_GET["privacy_mode"];
-    if(strcmp($config['PRIVACY_MODE'], "1") == 0 ) {
-      $pmode = "on";
-    }elseif(strcmp($config['PRIVACY_MODE'], "") == 0) {
-      $pmode = "off";
-    }
-    if(strcmp($privacy_mode,$pmode) !== 0) {
-      $contents = preg_replace("/PRIVACY_MODE=.*/", "PRIVACY_MODE=$privacy_mode", $contents);
-      $contents2 = preg_replace("/PRIVACY_MODE=.*/", "PRIVACY_MODE=$privacy_mode", $contents2);
-      if(strcmp($privacy_mode,"on") == 0) {
-        exec('sudo sed -i \'s/\/usr\/local\/bin\/server.py/\/usr\/local\/bin\/privacy_server.py/g\' ../../BirdNET-Pi/templates/birdnet_server.service');
-	      exec('sudo systemctl daemon-reload');
-	      exec('restart_services.sh');
-	      header('Location: /log');
-      } elseif(strcmp($privacy_mode,"off") == 0) {
-        exec('sudo sed -i \'s/\/usr\/local\/bin\/privacy_server.py/\/usr\/local\/bin\/server.py/g\' ../../BirdNET-Pi/templates/birdnet_server.service');
-	      exec('sudo systemctl daemon-reload');
-	      exec('restart_services.sh');
-	      header('Location: /log');
-      }
+  if(isset($_GET["privacy_threshold"])) {
+    $privacy_threshold = $_GET["privacy_threshold"];
+    if(strcmp($privacy_threshold,$config['PRIVACY_THRESHOLD']) !== 0) {
+      $contents = preg_replace("/PRIVACY_THRESHOLD=.*/", "PRIVACY_THRESHOLD=$privacy_threshold", $contents);
+      $contents2 = preg_replace("/PRIVACY_THRESHOLD=.*/", "PRIVACY_THRESHOLD=$privacy_threshold", $contents2);
+      exec('restart_services.sh');
     }
   }
 
   if(isset($_GET["rec_card"])) {
     $rec_card = $_GET["rec_card"];
     if(strcmp($rec_card,$config['REC_CARD']) !== 0) {
-      $contents = preg_replace("/REC_CARD=.*/", "REC_CARD=$rec_card", $contents);
-      $contents2 = preg_replace("/REC_CARD=.*/", "REC_CARD=$rec_card", $contents2);
+      $contents = preg_replace("/REC_CARD=.*/", "REC_CARD=\"$rec_card\"", $contents);
+      $contents2 = preg_replace("/REC_CARD=.*/", "REC_CARD=\"$rec_card\"", $contents2);
     }
   }
 
@@ -165,6 +163,9 @@ if(isset($_GET['submit'])) {
   fwrite($fh, $contents);
   fwrite($fh2, $contents2);
 }
+
+$count_labels = count(file("./scripts/labels.txt"));
+$count = $count_labels;
 ?>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
@@ -181,14 +182,23 @@ if (file_exists('./scripts/thisrun.txt')) {
 ?>
       <h2>Advanced Settings</h2>
     <form action="" method="GET">
-      <label>Privacy Mode: </label>
-      <label for="on">
-      <input name="privacy_mode" type="radio" id="on" value="on" <?php if (strcmp($newconfig['PRIVACY_MODE'], "1") == 0) { echo "checked"; }?>>On</label>
-      <label for="off">
-      <input name="privacy_mode" type="radio" id="off" value="off" <?php if (strcmp($newconfig['PRIVACY_MODE'], "") == 0) { echo "checked"; }?>>Off</label>
-      <p>Privacy mode can be set to 'on' or 'off' to configure analysis to be more sensitive to human detections. Privacy mode 'on' will purge any data that receives even a low Human confidence score.
-      Please note that changing this setting restarts services and replaces the running server. It will take about 90, so please be patient!</p>
-
+      <label>Privacy Threshold: </label><br>
+      <div class="slidecontainer">
+        <input name="privacy_threshold" type="range" min="0" max="3" value="<?php print($newconfig['PRIVACY_THRESHOLD']);?>" class="slider" id="privacy_threshold">
+        <p>Value: <span id="threshold_value"></span>%</p>
+      </div>
+      <script>
+      var slider = document.getElementById("privacy_threshold");
+      var output = document.getElementById("threshold_value");
+      output.innerHTML = slider.value; // Display the default slider value
+      
+      // Update the current slider value (each time you drag the slider handle)
+      slider.oninput = function() {
+        output.innerHTML = this.value;
+        document.getElementById("predictionCount").innerHTML = parseInt((this.value * <?php echo $count; ?>)/100);
+      }
+      </script>
+      <p>If a Human is predicted anywhere among the top <span id="predictionCount"><?php echo $newconfig['PRIVACY_THRESHOLD'] == 0 ? "threshold % of" : intval(($newconfig['PRIVACY_THRESHOLD'] * $count)/100); ?></span> predictions, the sample will be considered of human origin and no data will be collected. Start with 1% and move up as needed.</p>
       <label>Full Disk Behavior: </label>
       <label for="purge">
       <input name="full_disk" type="radio" id="purge" value="purge" <?php if (strcmp($newconfig['FULL_DISK'], "purge") == 0) { echo "checked"; }?>>Purge</label>
@@ -201,6 +211,9 @@ if (file_exists('./scripts/thisrun.txt')) {
       <label for="channels">Audio Channels: </label>
       <input name="channels" type="number" min="1" max="32" step="1" value="<?php print($newconfig['CHANNELS']);?>" required/><br>
       <p>Set Channels to the number of channels supported by your sound card. 32 max.</p>
+      <label for="rtsp_stream">RTSP Stream: </label>
+      <input name="rtsp_stream" type="url" value="<?php echo $newconfig['RTSP_STREAM'];?>"</input><br>
+      <p>If you place an RTSP stream URL here, BirdNET-Pi will use that as its audio source.</p>
       <label for="recording_length">Recording Length: </label>
       <input name="recording_length" oninput="document.getElementsByName('extraction_length')[0].setAttribute('max', this.value);" type="number" min="3" max="60" step="1" value="<?php print($newconfig['RECORDING_LENGTH']);?>" required/><br>
       <p>Set Recording Length in seconds between 6 and 60. Multiples of 3 are recommended, as BirdNET analyzes in 3-second chunks.</p> 
@@ -222,7 +235,7 @@ foreach($formats as $format){
       <label for="caddy_pwd">Password: </label>
       <input name="caddy_pwd" type="text" value="<?php print($newconfig['CADDY_PWD']);?>" /><br>
       <h3>Custom URL</h3>
-      <p><a href="mailto:@gmail.com?subject=Request%20BirdNET-Pi%20Subdomain&body=<?php include('birdnetpi_request.php'); ?>" target="_blank">Email Me</a> if you would like a BirdNETPi.com subdomain. This would be, <i>https://YourLocation.birdnetpi.com</i></p>
+      <p><a href="mailto:mcguirepr89@gmail.com?subject=Request%20BirdNET-Pi%20Subdomain&body=<?php include('birdnetpi_request.php'); ?>" target="_blank">Email Me</a> if you would like a BirdNETPi.com subdomain. This would be, <i>https://YourLocation.birdnetpi.com</i></p>
       <p>When you update the URL below, the web server will reload, so be sure to wait at least 30 seconds and then go to your new URL.</p>
       <label for="birdnetpi_url">BirdNET-Pi URL: </label>
       <input name="birdnetpi_url" type="url" value="<?php print($newconfig['BIRDNETPI_URL']);?>" /><br>
@@ -239,7 +252,7 @@ foreach($formats as $format){
       <p>Min=0.5, Max=1.5</p>
       <br><br>
       <input type="hidden" name="view" value="Advanced">
-      <button type="submit" name="submit" value="advanced">
+      <button onclick="if(<?php print($newconfig['PRIVACY_THRESHOLD']);?> != document.getElementById('privacy_threshold').value){return confirm('This will take about 90 seconds.')}" type="submit" name="submit" value="advanced">
 <?php
 if(isset($_GET['submit'])){
   echo "Success!";
