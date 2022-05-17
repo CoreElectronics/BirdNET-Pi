@@ -20,7 +20,7 @@ fi
 # This is the default branch to clone from
 #branch=main
 # This branch is at a known-working commit
-branch=stable
+branch=main
 git clone -b $branch https://github.com/CoreElectronics/CE-BirdNET-Pi.git ${HOME}/BirdNET-Pi &&
 
 $HOME/BirdNET-Pi/scripts/install_birdnet.sh
